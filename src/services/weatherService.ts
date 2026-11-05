@@ -20,9 +20,9 @@ async function fetchWithTimeout(url: string): Promise<Response> {
     return await fetch(url, { signal: controller.signal });
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new WeatherServiceError('A requisição demorou demais. Tente novamente.');
+      throw new WeatherServiceError('A requisição demorou demais.');
     }
-    throw new WeatherServiceError('Falha de rede. Verifique sua conexão.');
+    throw new WeatherServiceError('Falha de rede.');
   } finally {
     clearTimeout(timeout);
   }
@@ -33,6 +33,7 @@ interface GeocodingResult {
   name: string;
   country?: string;
   admin1?: string;
+  timezone?: string;
   latitude: number;
   longitude: number;
 }
@@ -45,7 +46,7 @@ export async function searchCities(name: string): Promise<City[]> {
   const query = name.trim();
   if (!query) return [];
 
-  const url = `${GEOCODING_URL}?name=${encodeURIComponent(query)}&count=5&language=pt&format=json`;
+  const url = `${GEOCODING_URL}?name=${encodeURIComponent(query)}&count=10&language=pt&format=json`;
   const res = await fetchWithTimeout(url);
   if (!res.ok) {
     throw new WeatherServiceError('Não foi possível buscar a cidade. Tente novamente.');
@@ -59,12 +60,15 @@ export async function searchCities(name: string): Promise<City[]> {
     name: r.name,
     country: r.country ?? '',
     admin1: r.admin1,
+    adminRegion: r.admin1,
+    timezone: r.timezone,
     latitude: r.latitude,
     longitude: r.longitude,
   }));
 }
 
 interface ForecastResponse {
+  timezone?: string | null;
   current?: {
     time?: string | null;
     temperature_2m?: number | null;
@@ -73,6 +77,11 @@ interface ForecastResponse {
     surface_pressure?: number | null;
     precipitation?: number | null;
     weather_code?: number | null;
+  };
+  hourly?: {
+    time?: string[];
+    temperature_2m?: (number | null)[];
+    weather_code?: (number | null)[];
   };
   daily?: {
     time: string[];
@@ -105,6 +114,16 @@ function mapForecast(d: NonNullable<ForecastResponse['daily']>): ForecastDay[] {
   }));
 }
 
+function mapHourly(hourly: NonNullable<ForecastResponse['hourly']>): NonNullable<WeatherData['hourlyForecast']> {
+  if (!Array.isArray(hourly.time)) return [];
+
+  return hourly.time.map((time, index) => ({
+    time,
+    temperature: hourly.temperature_2m?.[index] ?? null,
+    weatherCode: hourly.weather_code?.[index] ?? null,
+  }));
+}
+
 /**
  * Busca o clima atual e a previsão de 5 dias para uma cidade.
  * Temperaturas retornam em Celsius (conversão fica na UI).
@@ -117,7 +136,9 @@ export async function getWeather(city: City): Promise<WeatherData> {
       'temperature_2m,relative_humidity_2m,wind_speed_10m,surface_pressure,precipitation,weather_code',
     daily:
       'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    hourly: 'temperature_2m,weather_code',
     forecast_days: '5',
+    temperature_unit: 'celsius',
     timezone: 'auto',
   });
 
@@ -127,7 +148,13 @@ export async function getWeather(city: City): Promise<WeatherData> {
   }
 
   const data = (await res.json()) as ForecastResponse;
-  if (!data.current || !data.daily) {
+  if (
+    !data.current ||
+    !data.daily ||
+    !Array.isArray(data.daily.time) ||
+    data.daily.time.length !== 5 ||
+    data.daily.time.some((date) => typeof date !== 'string' || date.length === 0)
+  ) {
     throw new WeatherServiceError('Resposta de clima incompleta. Tente novamente.');
   }
 
@@ -135,5 +162,7 @@ export async function getWeather(city: City): Promise<WeatherData> {
     city,
     current: mapCurrent(data.current),
     forecast: mapForecast(data.daily),
+    hourlyForecast: data.hourly ? mapHourly(data.hourly) : [],
+    timezone: data.timezone ?? null,
   };
 }

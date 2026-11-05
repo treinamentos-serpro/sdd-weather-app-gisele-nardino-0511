@@ -7,6 +7,7 @@ const geocoding = {
       name: 'Seattle',
       country: 'Estados Unidos',
       admin1: 'Washington',
+      timezone: 'America/Los_Angeles',
       latitude: 47.6,
       longitude: -122.33,
     },
@@ -14,6 +15,7 @@ const geocoding = {
 };
 
 const forecast = {
+  timezone: 'America/Los_Angeles',
   current: {
     time: '2026-06-16T12:00',
     temperature_2m: 0,
@@ -22,6 +24,11 @@ const forecast = {
     surface_pressure: 1015,
     precipitation: 0,
     weather_code: 3,
+  },
+  hourly: {
+    time: ['2026-06-16T12:00', '2026-06-16T13:00'],
+    temperature_2m: [0, 2],
+    weather_code: [3, 1],
   },
   daily: {
     time: ['2026-06-16', '2026-06-17', '2026-06-18', '2026-06-19', '2026-06-20'],
@@ -45,8 +52,11 @@ test('fluxo completo: buscar → clima atual → previsão → trocar unidade', 
 
   await page.getByLabel(/buscar cidade/i).fill('Seattle');
   await page.getByRole('button', { name: /buscar/i }).click();
+  await page.getByRole('button', { name: /Seattle.*Washington.*Estados Unidos/i }).click();
 
   await expect(page.getByRole('heading', { name: 'Seattle' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Previsão por hora' })).toBeVisible();
+  await page.getByRole('button', { name: 'Por dia' }).click();
   await expect(page.getByRole('region', { name: /previsão de 5 dias/i })).toBeVisible();
 
   // 0°C exibido; após trocar para °F deve virar 32°.
@@ -74,6 +84,7 @@ test('viewport de 320px renderiza o fluxo principal sem overflow horizontal', as
   await expect(page.getByRole('button', { name: 'Celsius (°C)' })).toBeVisible();
   await page.getByLabel(/buscar cidade/i).fill('Seattle');
   await page.getByRole('button', { name: /buscar/i }).click();
+  await page.getByRole('button', { name: /Seattle.*Washington.*Estados Unidos/i }).click();
   await expect(page.getByRole('heading', { name: 'Seattle' })).toBeVisible();
 
   const hasHorizontalOverflow = await page.evaluate(

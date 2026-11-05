@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import ForecastList from '../../src/components/ForecastList';
+import HourlyForecastList from '../../src/components/HourlyForecastList';
 import type { ForecastDay } from '../../src/types/weather';
 
 const forecast: ForecastDay[] = [
@@ -66,5 +67,26 @@ describe('ForecastList', () => {
     expect(secondCard.getByText('Condição indisponível')).toBeInTheDocument();
     expect(secondCard.getAllByText('—')).toHaveLength(2);
     expect(secondCard.getByText('Chuva —')).toBeInTheDocument();
+  });
+
+  it('exibe previsão horária em ordem local, converte unidade e informa campos ausentes', () => {
+    render(
+      <HourlyForecastList
+        forecast={[
+          { time: '2026-11-05T12:00', temperature: 20, weatherCode: 0 },
+          { time: '2026-11-05T13:00', temperature: null, weatherCode: null },
+        ]}
+        unit="fahrenheit"
+      />,
+    );
+
+    const region = screen.getByRole('region', { name: 'Previsão por hora' });
+    const hours = within(region).getAllByRole('listitem');
+    expect(hours).toHaveLength(2);
+    expect(within(hours[0]).getByText('12:00')).toBeInTheDocument();
+    expect(within(hours[0]).getByText('68°F')).toBeInTheDocument();
+    expect(within(hours[1]).getByText('13:00')).toBeInTheDocument();
+    expect(within(hours[1]).getByText('Condição indisponível')).toBeInTheDocument();
+    expect(within(hours[1]).getByText('—')).toBeInTheDocument();
   });
 });

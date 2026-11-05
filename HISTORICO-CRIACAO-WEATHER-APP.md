@@ -230,6 +230,54 @@
 - **Validação:** `pnpm lint`, `pnpm build` e `pnpm test` passaram; 10 arquivos de teste e 37 testes aprovados. E2E não executou porque os navegadores Chromium/WebKit do Playwright não estão instalados no ambiente.
 - **Pendências:** confirmar visualmente o cenário em 320 px quando houver browsers Playwright disponíveis.
 
+### 29. Cliente de geocoding
+
+- **Pedido:** implementar/verificar `searchCities` com Open-Meteo, sem rede para input vazio, encoding do nome, normalização para `City[]` e erro tipado para HTTP não-ok.
+- **Execução:** a implementação existente já satisfazia essas regras. Reforcei os testes para conferir o mapeamento completo de `City` e a URL exata com acentos e espaços codificados.
+- **Artefatos atualizados:** `tests/unit/weatherService.test.ts`, `HISTORICO-CRIACAO-WEATHER-APP.md`.
+- **Validação:** teste focal aprovado; `pnpm lint`, `pnpm build` e `pnpm test` passaram; 10 arquivos de teste e 38 testes aprovados.
+- **Pendências:** nenhuma para esta solicitação.
+
+### 30. Cliente e normalização do forecast
+
+- **Pedido:** implementar/verificar `getWeather` com dados current e daily, mapeamento para tipos internos, cinco dias de previsão e erro em resposta incompleta.
+- **Execução:** mantido o request de forecast com coordenadas, campos current/daily, timezone automático e cinco dias. A validação agora exige cinco datas locais válidas; os testes cobrem o mapeamento de todos os campos de current e daily e ausência separada de cada bloco obrigatório.
+- **Artefatos atualizados:** `src/services/weatherService.ts`, `tests/unit/weatherService.test.ts`, `HISTORICO-CRIACAO-WEATHER-APP.md`.
+- **Validação:** teste focal aprovado; `pnpm lint`, `pnpm build` e `pnpm test` passaram; 10 arquivos de teste e 40 testes aprovados.
+- **Pendências:** nenhuma para esta solicitação.
+
+### 31. Timeout e falhas de rede
+
+- **Pedido:** garantir timeout de 10 segundos com AbortController, mensagens específicas para timeout/rede como `WeatherServiceError` e limpeza do timer em `finally`.
+- **Execução:** mantido o helper com AbortController e `clearTimeout` no `finally`; mensagens ajustadas para “A requisição demorou demais.” e “Falha de rede.”. Testes exercitam o abort após 10 segundos, falha de transporte e timer sem pendências.
+- **Artefatos atualizados:** `src/services/weatherService.ts`, `tests/unit/weatherService.test.ts`, `HISTORICO-CRIACAO-WEATHER-APP.md`.
+- **Validação:** teste focal aprovado sem warnings; `pnpm lint`, `pnpm build` e `pnpm test` passaram; 10 arquivos de teste e 42 testes aprovados.
+- **Pendências:** nenhuma para esta solicitação.
+
+### 32. Hook de busca e estado do clima
+
+- **Pedido:** implementar `useWeather` com status, dados, cidades, erro, query, busca, seleção e retry da última operação.
+- **Execução:** o hook agora rastreia a última operação para direcionar o retry ao geocoding ou forecast correspondente e usa identificador sequencial para ignorar respostas obsoletas. Criados testes para estado inicial, busca/sucesso, resultado vazio, seleção, retry de busca e concorrência.
+- **Artefatos atualizados:** `src/hooks/useWeather.ts`, `tests/unit/useWeather.test.tsx`, `HISTORICO-CRIACAO-WEATHER-APP.md`.
+- **Validação:** teste focal aprovado; `pnpm lint`, `pnpm build` e `pnpm test` passaram; 11 arquivos de teste e 47 testes aprovados.
+- **Pendências:** nenhuma para esta solicitação.
+
+### 33. Retry integrado na tela principal
+
+- **Pedido:** substituir mock de estado por `useWeather` no App e garantir renderização dos estados, unidade de UI e retry acionado pelo ErrorState.
+- **Execução:** `App` já compunha o hook, os estados e a unidade local. Ampliei o teste de integração para falhar a busca, acionar “Tentar novamente” e confirmar a renderização do sucesso com os dados mockados.
+- **Artefatos atualizados:** `tests/unit/App.test.tsx`, `HISTORICO-CRIACAO-WEATHER-APP.md`.
+- **Validação:** teste focal aprovado; `pnpm lint`, `pnpm build` e `pnpm test` passaram; 11 arquivos de teste e 47 testes aprovados.
+- **Pendências:** nenhuma para esta solicitação.
+
+### 34. Alinhamento da integração Open-Meteo ao plano
+
+- **Pedido:** implementar os itens identificados como divergentes do plano técnico.
+- **Execução:** geocoding agora solicita até 10 cidades e mapeia região/timezone; forecast solicita Celsius explícito e hourly, normalizando horários e timezone. O hook deixou de selecionar automaticamente a primeira cidade; `App` exibe resultados acessíveis e consulta o forecast somente após seleção. Adicionada visão horária inicial das próximas 24 horas e alternância para a previsão diária.
+- **Artefatos atualizados:** `src/services/weatherService.ts`, `src/hooks/useWeather.ts`, `src/App.tsx`, `src/components/CityResults.tsx`, `src/components/HourlyForecastList.tsx`, `tests/unit/weatherService.test.ts`, `tests/unit/useWeather.test.tsx`, `tests/unit/App.test.tsx`, `tests/unit/ForecastList.test.tsx`, `tests/e2e/weather.spec.ts`, `HISTORICO-CRIACAO-WEATHER-APP.md`.
+- **Validação:** `pnpm lint`, `pnpm build` e `pnpm test` passaram; 11 arquivos e 48 testes aprovados. E2E atualizado, mas o Chromium não inicia no container por falta de `libnspr4`.
+- **Pendências:** instalar a dependência de sistema `libnspr4` para executar o E2E neste container.
+
 ## Estado Consolidado dos Artefatos
 
 | Artefato | Finalidade | Estado conhecido |
@@ -241,10 +289,14 @@
 | `tasks/weather-app-tasks.md` | Backlog de implementação/testes | 30 tarefas T-NN em oito entregas ordenadas, com dependências, matriz T→FR/AC/NFR, prioridade/tamanho e sequência de fatias verticais. |
 | `src/mocks/weatherData.ts` | Fixture de UI | Mock tipado de São Paulo com clima atual e cinco dias de previsão. |
 | `tests/unit/CurrentWeather.test.tsx` | Testes de UI | Cobertura de clima atual completo, freshness desatualizado e campos ausentes. |
-| `tests/unit/ForecastList.test.tsx` | Testes de UI | Cobertura de cinco cards, unidade Fahrenheit e campos ausentes na previsão. |
+| `tests/unit/ForecastList.test.tsx` | Testes de UI | Cobertura das previsões diária e horária, conversão e campos ausentes. |
 | `tests/unit/states.test.tsx` | Testes de UI | Cobertura de loading acessível, mensagem/retry de erro e título/dica do estado vazio. |
-| `tests/unit/App.test.tsx` | Testes de integração da UI | Cobertura dos estados da tela principal, fluxo com `weatherDataMock` e conversão de unidade sem nova consulta. |
+| `tests/unit/App.test.tsx` | Testes de integração da UI | Cobertura dos estados, retry do erro, fluxo com `weatherDataMock` e conversão de unidade sem nova consulta. |
 | `tests/e2e/weather.spec.ts` | Testes E2E | Fluxo da aplicação, estado vazio e fluxo mobile em 320 px sem overflow horizontal. |
+| `tests/unit/weatherService.test.ts` | Testes de serviço | Cobertura de geocoding, forecast current/daily, resposta incompleta, timeout, rede e limpeza do timer. |
+| `tests/unit/useWeather.test.tsx` | Testes de hook | Cobertura de busca, seleção, resultado vazio, retry da operação mais recente e descarte de resposta obsoleta. |
+| `src/components/CityResults.tsx` | Seleção de localidade | Apresenta resultados de geocoding para seleção explícita e acessível. |
+| `src/components/HourlyForecastList.tsx` | Previsão horária | Exibe as próximas 24 horas usando os horários locais retornados pelo provedor. |
 
 ## Pendências Conhecidas para Replicação
 

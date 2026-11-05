@@ -5,9 +5,12 @@ import SearchBar from './components/SearchBar';
 import UnitToggle from './components/UnitToggle';
 import CurrentWeather from './components/CurrentWeather';
 import ForecastList from './components/ForecastList';
+import HourlyForecastList from './components/HourlyForecastList';
+import CityResults from './components/CityResults';
 import LoadingState from './components/states/LoadingState';
 import ErrorState from './components/states/ErrorState';
 import EmptyState from './components/states/EmptyState';
+import type { ForecastView } from './types/weather';
 
 /**
  * WeatherView — aplicação completa de previsão do tempo.
@@ -16,8 +19,9 @@ import EmptyState from './components/states/EmptyState';
  * Copilot, do briefing à entrega.
  */
 export default function App() {
-  const { status, data, error, query, search, retry } = useWeather();
+  const { status, data, cities, error, query, search, selectCity, retry } = useWeather();
   const [unit, setUnit] = useState<Unit>('celsius');
+  const [forecastView, setForecastView] = useState<ForecastView>('hourly');
 
   return (
     <div className="min-h-screen text-white">
@@ -46,6 +50,10 @@ export default function App() {
 
         {status === 'loading' && <LoadingState />}
 
+        {status === 'success' && !data && (
+          <CityResults cities={cities} onSelect={selectCity} />
+        )}
+
         {status === 'empty' && (
           <EmptyState
             title={`Nenhuma cidade encontrada para "${query}"`}
@@ -58,7 +66,31 @@ export default function App() {
         {status === 'success' && data && (
           <>
             <CurrentWeather city={data.city} current={data.current} unit={unit} />
-            <ForecastList forecast={data.forecast} unit={unit} />
+            <section aria-label="Visualização da previsão" className="space-y-4">
+              <div role="group" aria-label="Período da previsão" className="inline-flex gap-2">
+                <button
+                  type="button"
+                  aria-pressed={forecastView === 'hourly'}
+                  onClick={() => setForecastView('hourly')}
+                  className="min-h-11 rounded-lg border border-white/10 px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
+                >
+                  Por hora
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={forecastView === 'daily'}
+                  onClick={() => setForecastView('daily')}
+                  className="min-h-11 rounded-lg border border-white/10 px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
+                >
+                  Por dia
+                </button>
+              </div>
+              {forecastView === 'hourly' ? (
+                <HourlyForecastList forecast={data.hourlyForecast ?? []} unit={unit} />
+              ) : (
+                <ForecastList forecast={data.forecast} unit={unit} />
+              )}
+            </section>
           </>
         )}
       </main>

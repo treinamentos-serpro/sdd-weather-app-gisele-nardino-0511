@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getWeather, searchCities } from '../../src/services/weatherService';
 import { weatherDataMock } from '../../src/mocks/weatherData';
@@ -55,8 +55,10 @@ describe('App', () => {
     expect(getWeather).not.toHaveBeenCalled();
   });
 
-  it('mostra o estado de erro quando a busca falha', async () => {
-    vi.mocked(searchCities).mockRejectedValue(new Error('Falha técnica'));
+  it('permite repetir a busca pelo ErrorState e renderiza o sucesso', async () => {
+    vi.mocked(searchCities)
+      .mockRejectedValueOnce(new Error('Falha técnica'))
+      .mockResolvedValueOnce([weatherDataMock.city]);
     render(<App />);
 
     fireEvent.change(screen.getByRole('searchbox', { name: /buscar cidade/i }), {
@@ -66,9 +68,19 @@ describe('App', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Algo deu errado. Tente novamente.');
     expect(screen.queryByText('Falha técnica')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
+
+    const cityOption = await screen.findByRole('button', { name: /São Paulo.*Brasil/i });
+    expect(searchCities).toHaveBeenNthCalledWith(2, 'São Paulo');
+
+    fireEvent.click(cityOption);
+
+    expect(await screen.findByRole('region', { name: 'Clima atual' })).toBeInTheDocument();
+    expect(getWeather).toHaveBeenCalledWith(weatherDataMock.city);
   });
 
-  it('renderiza o mock de clima e converte as unidades sem nova consulta', async () => {
+  it('exige seleção da cidade e alterna projeção/unidade sem nova consulta', async () => {
     vi.mocked(searchCities).mockResolvedValue([weatherDataMock.city]);
     render(<App />);
 
@@ -77,11 +89,19 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
+    const cityOption = await screen.findByRole('button', { name: /São Paulo.*Brasil/i });
+    expect(getWeather).not.toHaveBeenCalled();
+    fireEvent.click(cityOption);
+
     expect(await screen.findByRole('region', { name: 'Clima atual' })).toBeInTheDocument();
-    expect(screen.getByText('23°C')).toBeInTheDocument();
-    expect(screen.getByText('26°C')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Clima atual' })).getByText('23°C')).toBeInTheDocument();
     expect(screen.getByText('São Paulo')).toBeInTheDocument();
     expect(getWeather).toHaveBeenCalledTimes(1);
+
+    expect(screen.getByRole('region', { name: 'Previsão por hora' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Por dia' }));
+    expect(screen.getByRole('region', { name: 'Previsão de 5 dias' })).toBeInTheDocument();
+    expect(screen.getByText('26°C')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Fahrenheit (°F)' }));
 
