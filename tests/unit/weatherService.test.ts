@@ -94,8 +94,7 @@ describe('weatherService', () => {
       const data = await getWeather(CITY);
       expect(data.current.temperature).toBe(18);
       expect(data.forecast).toHaveLength(5);
-      // precipitação nula vira 0 (resposta parcial)
-      expect(data.forecast[4].precipitationProbability).toBe(0);
+      expect(data.forecast[4].precipitationProbability).toBeNull();
     });
 
     it('lança erro quando a resposta está incompleta', async () => {

@@ -1,0 +1,77 @@
+import type { WeatherData } from '../types/weather';
+
+export const weatherDataMock: WeatherData = {
+  city: {
+    id: 3448439,
+    name: 'São Paulo',
+    country: 'Brasil',
+    admin1: 'São Paulo',
+    adminRegion: 'São Paulo',
+    latitude: -23.55,
+    longitude: -46.63,
+    timezone: 'America/Sao_Paulo',
+  },
+  current: {
+    temperature: 23.4,
+    weatherCode: 2,
+    humidity: 68,
+    windSpeed: 12.5,
+    pressure: 1013.2,
+    precipitation: 0,
+    time: '2026-11-05T12:00',
+    observedAt: '2026-11-05T12:00:00-03:00',
+    freshness: 'current',
+    condition: {
+      code: 2,
+      descriptionPtBr: 'Parcialmente nublado',
+    },
+  },
+  forecast: [
+    {
+      date: '2026-11-05',
+      min: 17,
+      max: 26,
+      weatherCode: 2,
+      precipitationProbability: 10,
+      condition: { code: 2, descriptionPtBr: 'Parcialmente nublado' },
+    },
+    {
+      date: '2026-11-06',
+      min: 18,
+      max: 27,
+      weatherCode: 1,
+      precipitationProbability: 5,
+      condition: { code: 1, descriptionPtBr: 'Predomínio de sol' },
+    },
+    {
+      date: '2026-11-07',
+      min: 19,
+      max: 25,
+      weatherCode: 61,
+      precipitationProbability: 70,
+      condition: { code: 61, descriptionPtBr: 'Chuva fraca' },
+    },
+    {
+      date: '2026-11-08',
+      min: 17,
+      max: 24,
+      weatherCode: 3,
+      precipitationProbability: 15,
+      condition: { code: 3, descriptionPtBr: 'Nublado' },
+    },
+    {
+      date: '2026-11-09',
+      min: 16,
+      max: 25,
+      weatherCode: 0,
+      precipitationProbability: 0,
+      condition: { code: 0, descriptionPtBr: 'Céu limpo' },
+    },
+  ],
+  hourlyForecast: [
+    { time: '2026-11-05T12:00', temperature: 23.4, weatherCode: 2 },
+    { time: '2026-11-05T13:00', temperature: 24, weatherCode: 2 },
+    { time: '2026-11-05T14:00', temperature: 25, weatherCode: 1 },
+  ],
+  timezone: 'America/Sao_Paulo',
+};

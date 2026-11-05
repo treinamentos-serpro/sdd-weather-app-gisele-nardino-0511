@@ -27,9 +27,9 @@ export default function App() {
             <span aria-hidden="true" className="text-2xl text-sun">
               ☀️
             </span>
-            <span className="text-lg font-bold">WeatherView</span>
+            <h1 className="text-lg font-bold">WeatherView</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col items-end gap-3 sm:w-auto sm:flex-1 sm:flex-row sm:justify-end">
             <SearchBar onSearch={search} disabled={status === 'loading'} />
             <UnitToggle unit={unit} onChange={setUnit} />
           </div>
@@ -63,7 +63,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="py-8 text-center text-sm text-white/40">
+      <footer className="py-8 text-center text-sm text-white/60">
         Dados por{' '}
         <a
           href="https://open-meteo.com/"

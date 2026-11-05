@@ -66,42 +66,42 @@ export async function searchCities(name: string): Promise<City[]> {
 
 interface ForecastResponse {
   current?: {
-    time: string;
-    temperature_2m: number;
-    relative_humidity_2m: number;
-    wind_speed_10m: number;
-    surface_pressure: number;
-    precipitation: number;
-    weather_code: number;
+    time?: string | null;
+    temperature_2m?: number | null;
+    relative_humidity_2m?: number | null;
+    wind_speed_10m?: number | null;
+    surface_pressure?: number | null;
+    precipitation?: number | null;
+    weather_code?: number | null;
   };
   daily?: {
     time: string[];
-    weather_code: number[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
-    precipitation_probability_max: (number | null)[];
+    weather_code?: (number | null)[];
+    temperature_2m_max?: (number | null)[];
+    temperature_2m_min?: (number | null)[];
+    precipitation_probability_max?: (number | null)[];
   };
 }
 
 function mapCurrent(c: NonNullable<ForecastResponse['current']>): CurrentWeather {
   return {
-    time: c.time,
-    temperature: c.temperature_2m,
-    humidity: c.relative_humidity_2m,
-    windSpeed: c.wind_speed_10m,
-    pressure: c.surface_pressure,
-    precipitation: c.precipitation,
-    weatherCode: c.weather_code,
+    time: c.time ?? null,
+    temperature: c.temperature_2m ?? null,
+    humidity: c.relative_humidity_2m ?? null,
+    windSpeed: c.wind_speed_10m ?? null,
+    pressure: c.surface_pressure ?? null,
+    precipitation: c.precipitation ?? null,
+    weatherCode: c.weather_code ?? null,
   };
 }
 
 function mapForecast(d: NonNullable<ForecastResponse['daily']>): ForecastDay[] {
   return d.time.map((date, i) => ({
     date,
-    weatherCode: d.weather_code[i],
-    max: d.temperature_2m_max[i],
-    min: d.temperature_2m_min[i],
-    precipitationProbability: d.precipitation_probability_max[i] ?? 0,
+    weatherCode: d.weather_code?.[i] ?? null,
+    max: d.temperature_2m_max?.[i] ?? null,
+    min: d.temperature_2m_min?.[i] ?? null,
+    precipitationProbability: d.precipitation_probability_max?.[i] ?? null,
   }));
 }
 

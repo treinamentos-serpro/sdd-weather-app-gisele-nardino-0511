@@ -51,7 +51,7 @@ test('fluxo completo: buscar → clima atual → previsão → trocar unidade', 
 
   // 0°C exibido; após trocar para °F deve virar 32°.
   await expect(page.getByText('0°').first()).toBeVisible();
-  await page.getByRole('button', { name: '°F' }).click();
+  await page.getByRole('button', { name: 'Fahrenheit (°F)' }).click();
   await expect(page.getByText('32°').first()).toBeVisible();
 });
 
@@ -65,12 +65,19 @@ test('estado vazio quando a cidade não existe', async ({ page }) => {
   await expect(page.getByText(/nenhuma cidade encontrada/i)).toBeVisible();
 });
 
-test('viewport mobile renderiza o fluxo principal', async ({ page }) => {
+test('viewport de 320px renderiza o fluxo principal sem overflow horizontal', async ({ page }) => {
   await mockApis(page);
-  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 320, height: 812 });
   await page.goto('/');
 
+  await expect(page.getByRole('searchbox', { name: /buscar cidade/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Celsius (°C)' })).toBeVisible();
   await page.getByLabel(/buscar cidade/i).fill('Seattle');
   await page.getByRole('button', { name: /buscar/i }).click();
   await expect(page.getByRole('heading', { name: 'Seattle' })).toBeVisible();
+
+  const hasHorizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(hasHorizontalOverflow).toBe(false);
 });

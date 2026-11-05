@@ -1,5 +1,5 @@
 import type { CurrentWeather as CurrentWeatherType, City, Unit } from '../types/weather';
-import { formatTemperature } from '../lib/temperature';
+import { formatTemperature, unitLabel } from '../lib/temperature';
 import { getWeatherIcon, getWeatherLabel } from '../lib/weatherCodes';
 
 interface CurrentWeatherProps {
@@ -16,21 +16,39 @@ interface MetricProps {
 
 function Metric({ icon, label, value }: MetricProps) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
+    <dl className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 backdrop-blur-md sm:px-4">
       <span aria-hidden="true" className="text-xl">
         {icon}
       </span>
       <div>
-        <p className="text-xs text-white/50">{label}</p>
-        <p className="font-semibold">{value}</p>
+        <dt className="text-xs text-white/60">{label}</dt>
+        <dd className="font-semibold">{value}</dd>
       </div>
-    </div>
+    </dl>
   );
 }
 
 /** Seção "hero" com as condições atuais da cidade selecionada. */
 export default function CurrentWeather({ city, current, unit }: CurrentWeatherProps) {
   const location = [city.admin1, city.country].filter(Boolean).join(', ');
+  const weatherCode = current.weatherCode ?? current.condition?.code ?? null;
+  const weatherIcon = weatherCode === null ? '🌡️' : getWeatherIcon(weatherCode);
+  const weatherLabel =
+    current.condition?.descriptionPtBr ??
+    (weatherCode === null ? 'Condição indisponível' : getWeatherLabel(weatherCode));
+  const temperature =
+    current.temperature === null
+      ? '—'
+      : formatTemperature(current.temperature, unit).replace(/°$/, unitLabel(unit));
+  const freshness = current.freshness ?? 'unknown';
+  const freshnessMessage =
+    freshness === 'stale'
+      ? 'Dados meteorológicos desatualizados.'
+      : freshness === 'unknown'
+        ? 'Não foi possível confirmar a atualidade dos dados.'
+        : null;
+  const timestamp = current.observedAt ?? current.time;
+  const timestampLabel = current.observedAt ? 'Observado em' : 'Horário informado pela fonte';
 
   return (
     <section
@@ -44,31 +62,45 @@ export default function CurrentWeather({ city, current, unit }: CurrentWeatherPr
 
           <div className="mt-6 flex items-center gap-4">
             <span aria-hidden="true" className="text-6xl">
-              {getWeatherIcon(current.weatherCode)}
+              {weatherIcon}
             </span>
             <span className="text-6xl font-light md:text-7xl">
-              {formatTemperature(current.temperature, unit)}
+              {temperature}
             </span>
           </div>
-          <p className="mt-2 text-white/70">{getWeatherLabel(current.weatherCode)}</p>
+          <p className="mt-2 text-white/70">{weatherLabel}</p>
+          {timestamp && (
+              <p className="mt-1 text-sm text-white/60">
+              {timestampLabel}: {timestamp}
+            </p>
+          )}
+          {freshnessMessage && (
+            <p role="status" className="mt-2 text-sm text-sun">
+              {freshnessMessage}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Metric icon="💧" label="Umidade" value={`${Math.round(current.humidity)}%`} />
+          <Metric
+            icon="💧"
+            label="Umidade"
+            value={current.humidity === null ? '—' : `${Math.round(current.humidity)}%`}
+          />
           <Metric
             icon="💨"
             label="Vento"
-            value={`${Math.round(current.windSpeed)} km/h`}
+            value={current.windSpeed === null ? '—' : `${Math.round(current.windSpeed)} km/h`}
           />
           <Metric
             icon="🌧️"
             label="Precipitação"
-            value={`${current.precipitation} mm`}
+            value={current.precipitation === null ? '—' : `${current.precipitation} mm`}
           />
           <Metric
             icon="📊"
             label="Pressão"
-            value={`${Math.round(current.pressure)} hPa`}
+            value={current.pressure === null ? '—' : `${Math.round(current.pressure)} hPa`}
           />
         </div>
       </div>
